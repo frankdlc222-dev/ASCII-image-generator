@@ -1,6 +1,6 @@
 import type { Generator, GenerationMode, GenerationOptions, GenerationProgress } from '../types';
 import { detectCapabilities } from '../lib/capability';
-import { createOffscreenCanvas } from '../lib/imageToCanvas';
+
 
 /**
  * Local AI Generator — WebGPU-based text-to-image generation in the browser.

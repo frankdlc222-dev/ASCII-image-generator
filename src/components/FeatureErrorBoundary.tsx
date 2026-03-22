@@ -38,7 +38,7 @@ export class FeatureErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      if (this.props.fallback) {
+      if ('fallback' in this.props && this.props.fallback !== undefined) {
         return this.props.fallback;
       }
 

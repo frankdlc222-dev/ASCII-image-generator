@@ -26,11 +26,11 @@ export function useStartupCheck(): StartupState {
   useEffect(() => {
     let cancelled = false;
 
-    console.log('[ASCII-Gen] Starting background capability check...');
+    console.log('[ASCII-Gen] Optional feature init starting: capability check...');
 
     const timeoutId = setTimeout(() => {
       if (cancelled) return;
-      console.warn('[ASCII-Gen] Capability check timed out after', STARTUP_TIMEOUT_MS, 'ms — using fallback.');
+      console.warn('[ASCII-Gen] Optional feature init failed: capability check timed out after', STARTUP_TIMEOUT_MS, 'ms — fallback activated.');
       setState({
         status: 'fallback',
         message: 'Capability check timed out. Using procedural fallback.',
@@ -62,7 +62,7 @@ export function useStartupCheck(): StartupState {
       } catch (err) {
         if (cancelled) return;
         clearTimeout(timeoutId);
-        console.error('[ASCII-Gen] Capability check failed:', err);
+        console.error('[ASCII-Gen] Optional feature init failed: capability check error:', err);
         setState({
           status: 'error',
           message: `Capability check failed: ${(err as Error).message}. Using procedural fallback.`,

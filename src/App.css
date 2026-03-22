@@ -205,6 +205,52 @@
   color: #e74c3c;
 }
 
+/* ─── Badge Row ──────────────────────────────────────────────── */
+
+.badge-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  flex-wrap: wrap;
+}
+
+/* ─── Startup Badge ──────────────────────────────────────────── */
+
+.startup-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 100px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.startup-checking {
+  background: rgba(241, 196, 15, 0.12);
+  color: #f1c40f;
+  border: 1px solid rgba(241, 196, 15, 0.3);
+}
+
+.startup-ready {
+  background: rgba(46, 204, 113, 0.12);
+  color: #2ecc71;
+  border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.startup-fallback {
+  background: rgba(52, 152, 219, 0.12);
+  color: #3498db;
+  border: 1px solid rgba(52, 152, 219, 0.3);
+}
+
+.startup-error {
+  background: rgba(231, 76, 60, 0.12);
+  color: #e74c3c;
+  border: 1px solid rgba(231, 76, 60, 0.3);
+}
+
 /* ─── Mode Badge ─────────────────────────────────────────────── */
 
 .mode-badge {
@@ -214,7 +260,6 @@
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.5px;
-  margin-top: 0.25rem;
 }
 
 .mode-ai {

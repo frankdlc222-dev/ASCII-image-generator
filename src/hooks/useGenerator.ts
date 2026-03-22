@@ -67,6 +67,7 @@ export function useGenerator(): UseGeneratorResult {
       let usedMode: GenerationMode;
 
       if (forceFallback) {
+        console.log('[ASCII-Gen] Forced procedural fallback.');
         setStatus('fallback-activated');
         setStatusMessage('Using procedural fallback (forced).');
         generator = getProceduralGenerator();
@@ -75,6 +76,7 @@ export function useGenerator(): UseGeneratorResult {
         setStatus('checking-capability');
         setStatusMessage('Checking device capabilities...');
 
+        console.log('[ASCII-Gen] Checking local AI support for generation...');
         const localAi = getLocalAiGenerator();
         const supported = await localAi.isSupported();
 

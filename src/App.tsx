@@ -4,8 +4,10 @@ import { ControlsPanel } from './components/ControlsPanel';
 import { StatusPanel } from './components/StatusPanel';
 import { AsciiViewport } from './components/AsciiViewport';
 import { GenerationModeBadge } from './components/GenerationModeBadge';
+import { StartupBadge } from './components/StartupBadge';
 import { useGenerator } from './hooks/useGenerator';
 import { useAsciiAnimation } from './hooks/useAsciiAnimation';
+import { useStartupCheck } from './hooks/useStartupCheck';
 import type { ControlValues, AsciiOptions } from './types';
 import { DEFAULT_CONTROLS, EXAMPLE_PROMPTS } from './types';
 import './App.css';
@@ -13,6 +15,9 @@ import './App.css';
 function App() {
   const [controls, setControls] = useState<ControlValues>(DEFAULT_CONTROLS);
   const [lastPrompt, setLastPrompt] = useState('');
+
+  // Background startup check — non-blocking
+  const startup = useStartupCheck();
 
   const {
     status,
@@ -48,9 +53,11 @@ function App() {
         charRamp: controls.charRamp,
         edgeEnhance: controls.edgeEnhance,
       };
-      generate(prompt, asciiOpts, controls.forceFallback, controls.seed);
+      // If startup detected no WebGPU, force fallback automatically
+      const forceFallback = controls.forceFallback || (!startup.webgpuAvailable && startup.status !== 'checking');
+      generate(prompt, asciiOpts, forceFallback, controls.seed);
     },
-    [controls, generate]
+    [controls, generate, startup.webgpuAvailable, startup.status]
   );
 
   const handleSurprise = useCallback(() => {
@@ -84,7 +91,10 @@ function App() {
         <p className="app-description">
           Type a prompt, generate an image locally in your browser, and watch it transform into ASCII art.
         </p>
-        <GenerationModeBadge mode={mode} />
+        <div className="badge-row">
+          <StartupBadge status={startup.status} message={startup.message} />
+          <GenerationModeBadge mode={mode} />
+        </div>
       </header>
 
       <main className="app-main">

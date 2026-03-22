@@ -17,27 +17,55 @@
       </div>
     </div>
     <script>
-      // Safety timeout: if the JS bundle hasn't loaded within 8 seconds,
-      // show an error. This only fires if the module script itself fails to
-      // load (network error, CORS, syntax error in bundle).
+      // Track app startup state and capture real errors.
       window.__reactMounted = false;
-      setTimeout(function() {
+      window.__startupError = null;
+
+      // Capture the first real error so we can show it instead of a vague message.
+      window.addEventListener('error', function(event) {
         if (window.__reactMounted) return;
-        console.error('[ASCII-Gen] JS bundle failed to load within 8 seconds.');
+        console.error('[ASCII-Gen] Global error during startup:', event.error || event.message);
+        window.__startupError = event.error || new Error(event.message || 'Unknown script error');
+      });
+      window.addEventListener('unhandledrejection', function(event) {
+        if (window.__reactMounted) return;
+        console.error('[ASCII-Gen] Unhandled rejection during startup:', event.reason);
+        window.__startupError = event.reason;
+      });
+
+      function showStartupFailure(reason) {
         var el = document.getElementById('loading-status');
         if (el) {
           el.style.color = '#f85149';
-          el.textContent = 'App failed to load. The JavaScript bundle may not have loaded. Check the browser console and network tab for errors.';
+          el.textContent = reason;
         }
         var fallback = document.getElementById('loading-fallback');
-        if (fallback) {
+        if (fallback && !document.getElementById('reload-btn')) {
+          // Show error details if available
+          if (window.__startupError) {
+            var detail = document.createElement('pre');
+            detail.style.cssText = 'color:#8b949e;font-size:0.75rem;max-width:600px;overflow:auto;margin:0.5rem 0 1rem;text-align:left;background:#161b22;padding:0.75rem;border-radius:6px;';
+            detail.textContent = String(window.__startupError.stack || window.__startupError.message || window.__startupError);
+            fallback.appendChild(detail);
+          }
           var btn = document.createElement('button');
+          btn.id = 'reload-btn';
           btn.textContent = 'Reload Page';
           btn.style.cssText = 'margin-top:1rem;padding:0.6rem 1.2rem;background:#7c3aed;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:600;';
           btn.onclick = function() { location.reload(); };
           fallback.appendChild(btn);
         }
-      }, 8000);
+      }
+
+      // Safety timeout: if the app hasn't mounted within 10 seconds, show error with details.
+      setTimeout(function() {
+        if (window.__reactMounted) return;
+        console.error('[ASCII-Gen] App failed to mount within 10 seconds.');
+        var reason = window.__startupError
+          ? 'App failed to start: ' + (window.__startupError.message || String(window.__startupError))
+          : 'App failed to load. The JavaScript bundle may not have loaded. Check the browser console for errors.';
+        showStartupFailure(reason);
+      }, 10000);
     </script>
     <noscript>
       <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0d1117;color:#e6edf3;font-family:sans-serif;text-align:center;padding:2rem;">

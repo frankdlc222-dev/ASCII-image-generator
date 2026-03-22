@@ -23,6 +23,8 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('[ASCII-Gen] Root error boundary caught error:', error);
+    console.error('[ASCII-Gen] Error message:', error.message);
+    console.error('[ASCII-Gen] Error stack:', error.stack);
     console.error('[ASCII-Gen] Component stack:', info.componentStack);
     this.setState({ errorInfo: info });
   }

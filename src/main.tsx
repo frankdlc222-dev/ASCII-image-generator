@@ -4,7 +4,7 @@ import { ErrorBoundary } from './components/ErrorBoundary.tsx'
 import './index.css'
 import App from './App.tsx'
 
-console.log('[ASCII-Gen] Starting app...');
+console.log('[ASCII-Gen] Entry module loaded.');
 
 // Signal mount as early as possible to prevent the HTML timeout from firing.
 // Even if rendering fails, React has loaded and we handle errors in-app.
@@ -23,6 +23,7 @@ if (root) {
       </StrictMode>,
     )
     console.log('[ASCII-Gen] React render scheduled successfully.');
+    console.log('[ASCII-Gen] App mounted.');
   } catch (e) {
     console.error('[ASCII-Gen] React mount failed:', e);
     root.innerHTML = `

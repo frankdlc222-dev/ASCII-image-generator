@@ -8,7 +8,8 @@ import type {
   AsciiResult,
   AsciiOptions,
 } from '../types';
-import { LocalAiGenerator, ProceduralGenerator } from '../generators/index';
+import { ProceduralGenerator, loadLocalAiGenerator } from '../generators/index';
+import type { LocalAiGenerator } from '../generators/index';
 import { imageToAscii } from '../lib/asciiConverter';
 
 interface UseGeneratorResult {
@@ -42,9 +43,16 @@ export function useGenerator(): UseGeneratorResult {
     return proceduralRef.current;
   }, []);
 
-  const getLocalAiGenerator = useCallback(() => {
+  const getLocalAiGenerator = useCallback(async (): Promise<LocalAiGenerator> => {
     if (!localAiRef.current) {
-      localAiRef.current = new LocalAiGenerator();
+      console.log('[ASCII-Gen] Lazy-loading LocalAiGenerator...');
+      try {
+        localAiRef.current = await loadLocalAiGenerator();
+        console.log('[ASCII-Gen] LocalAiGenerator loaded successfully.');
+      } catch (e) {
+        console.error('[ASCII-Gen] Failed to load LocalAiGenerator module:', e);
+        throw new Error(`Failed to load AI generator: ${(e as Error).message}`);
+      }
     }
     return localAiRef.current;
   }, []);
@@ -79,10 +87,19 @@ export function useGenerator(): UseGeneratorResult {
         setStatusMessage('Checking device capabilities...');
 
         console.log('[ASCII-Gen] Checking local AI support for generation...');
-        const localAi = getLocalAiGenerator();
-        const supported = await localAi.isSupported();
 
-        if (supported) {
+        let localAi: LocalAiGenerator | null = null;
+        let supported = false;
+
+        try {
+          localAi = await getLocalAiGenerator();
+          supported = await localAi.isSupported();
+        } catch (e) {
+          console.warn('[ASCII-Gen] Local AI module load or support check failed:', e);
+          supported = false;
+        }
+
+        if (supported && localAi) {
           try {
             setStatus('initializing-model');
             setStatusMessage('Initializing local AI model...');
@@ -99,7 +116,7 @@ export function useGenerator(): UseGeneratorResult {
             usedMode = 'local-ai';
             setMode('local-ai');
           } catch (e) {
-            console.warn('Local AI init failed, falling back:', e);
+            console.warn('[ASCII-Gen] Local AI init failed, falling back:', e);
             setStatus('fallback-activated');
             setStatusMessage(
               `Local AI unavailable: ${(e as Error).message}. Using procedural fallback.`
@@ -139,7 +156,7 @@ export function useGenerator(): UseGeneratorResult {
         setStatusMessage('Revealing ASCII art...');
       } catch (e) {
         if (usedMode === 'local-ai') {
-          console.warn('Local AI generation failed, trying fallback:', e);
+          console.warn('[ASCII-Gen] Local AI generation failed, trying fallback:', e);
           setStatus('fallback-activated');
           setStatusMessage('Local AI generation failed. Switching to procedural fallback...');
           setMode('procedural');

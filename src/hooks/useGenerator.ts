@@ -23,6 +23,8 @@ interface UseGeneratorResult {
 }
 
 export function useGenerator(): UseGeneratorResult {
+  console.log('[ASCII-Gen] useGenerator hook initialized.');
+
   const [status, setStatus] = useState<AppStatus>('idle');
   const [statusMessage, setStatusMessage] = useState('');
   const [mode, setMode] = useState<GenerationMode | null>(null);

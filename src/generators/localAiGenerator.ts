@@ -42,15 +42,21 @@ export class LocalAiGenerator implements Generator {
 
     console.log('[ASCII-Gen] Checking local AI support...');
 
-    const cap = await detectCapabilities();
-    if (!cap.webgpu) {
-      console.log('[ASCII-Gen] WebGPU not available, local AI not supported.');
-      this.supported = false;
-      return false;
-    }
-
-    // Check if we can actually get a device
     try {
+      const cap = await detectCapabilities();
+      if (!cap.webgpu) {
+        console.log('[ASCII-Gen] WebGPU not available, local AI not supported.');
+        this.supported = false;
+        return false;
+      }
+
+      // Guard: navigator.gpu may not exist in all environments
+      if (typeof navigator === 'undefined' || !navigator.gpu) {
+        this.supported = false;
+        return false;
+      }
+
+      // Check if we can actually get a device
       const adapter = await withTimeout(
         navigator.gpu.requestAdapter(),
         3000,
@@ -179,6 +185,10 @@ export class LocalAiGenerator implements Generator {
       progress: 50,
       message: 'Initializing WebGPU compute pipeline...',
     });
+
+    if (typeof navigator === 'undefined' || !navigator.gpu) {
+      throw new Error('WebGPU not available');
+    }
 
     const adapter = await navigator.gpu.requestAdapter();
     if (!adapter) throw new Error('No WebGPU adapter');
@@ -484,8 +494,12 @@ export class LocalAiGenerator implements Generator {
   }
 
   dispose(): void {
-    if (this.pipeline?.type === 'webgpu-compute' && this.pipeline.device) {
-      this.pipeline.device.destroy();
+    try {
+      if (this.pipeline?.type === 'webgpu-compute' && this.pipeline.device) {
+        this.pipeline.device.destroy();
+      }
+    } catch (e) {
+      console.warn('[ASCII-Gen] Error disposing GPU device:', e);
     }
     this.pipeline = null;
     this.initialized = false;

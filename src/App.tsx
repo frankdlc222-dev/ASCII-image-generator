@@ -5,6 +5,7 @@ import { StatusPanel } from './components/StatusPanel';
 import { AsciiViewport } from './components/AsciiViewport';
 import { GenerationModeBadge } from './components/GenerationModeBadge';
 import { StartupBadge } from './components/StartupBadge';
+import { FeatureErrorBoundary } from './components/FeatureErrorBoundary';
 import { useGenerator } from './hooks/useGenerator';
 import { useAsciiAnimation } from './hooks/useAsciiAnimation';
 import { useStartupCheck } from './hooks/useStartupCheck';
@@ -12,11 +13,15 @@ import type { ControlValues, AsciiOptions } from './types';
 import { DEFAULT_CONTROLS, EXAMPLE_PROMPTS } from './types';
 import './App.css';
 
+console.log('[ASCII-Gen] App module loaded.');
+
 function App() {
+  console.log('[ASCII-Gen] App component rendering...');
+
   const [controls, setControls] = useState<ControlValues>(DEFAULT_CONTROLS);
   const [lastPrompt, setLastPrompt] = useState('');
 
-  // Background startup check — non-blocking
+  // Background startup check — non-blocking, wrapped in try/catch internally
   const startup = useStartupCheck();
 
   const {
@@ -92,44 +97,56 @@ function App() {
           Type a prompt, generate an image locally in your browser, and watch it transform into ASCII art.
         </p>
         <div className="badge-row">
-          <StartupBadge status={startup.status} message={startup.message} />
+          <FeatureErrorBoundary feature="Startup Check" fallback={
+            <span className="startup-badge startup-fallback" title="Startup check failed">Using fallback</span>
+          }>
+            <StartupBadge status={startup.status} message={startup.message} />
+          </FeatureErrorBoundary>
           <GenerationModeBadge mode={mode} />
         </div>
       </header>
 
       <main className="app-main">
         <div className="app-content">
-          <PromptInput
-            onGenerate={handleGenerate}
-            disabled={isWorking}
-            onSurprise={handleSurprise}
-          />
+          <FeatureErrorBoundary feature="Prompt Input">
+            <PromptInput
+              onGenerate={handleGenerate}
+              disabled={isWorking}
+              onSurprise={handleSurprise}
+            />
+          </FeatureErrorBoundary>
 
-          <StatusPanel
-            status={status}
-            message={statusMessage}
-            progress={progress}
-            error={error}
-          />
+          <FeatureErrorBoundary feature="Status Panel" fallback={null}>
+            <StatusPanel
+              status={status}
+              message={statusMessage}
+              progress={progress}
+              error={error}
+            />
+          </FeatureErrorBoundary>
 
-          <AsciiViewport
-            lines={displayLines}
-            totalLines={asciiResult?.lines.length ?? 0}
-            isAnimating={isAnimating}
-            isComplete={isComplete}
-            onReplay={replay}
-            onReset={handleReset}
-            onGenerateAgain={handleGenerateAgain}
-            hasContent={hasContent}
-          />
+          <FeatureErrorBoundary feature="ASCII Viewport">
+            <AsciiViewport
+              lines={displayLines}
+              totalLines={asciiResult?.lines.length ?? 0}
+              isAnimating={isAnimating}
+              isComplete={isComplete}
+              onReplay={replay}
+              onReset={handleReset}
+              onGenerateAgain={handleGenerateAgain}
+              hasContent={hasContent}
+            />
+          </FeatureErrorBoundary>
         </div>
 
         <aside className="app-sidebar">
-          <ControlsPanel
-            controls={controls}
-            onChange={setControls}
-            disabled={isWorking}
-          />
+          <FeatureErrorBoundary feature="Controls Panel">
+            <ControlsPanel
+              controls={controls}
+              onChange={setControls}
+              disabled={isWorking}
+            />
+          </FeatureErrorBoundary>
         </aside>
       </main>
 

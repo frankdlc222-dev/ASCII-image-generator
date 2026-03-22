@@ -24,19 +24,30 @@ export async function detectCapabilities(): Promise<CapabilityReport> {
 
   console.log('[ASCII-Gen] Detecting WebGPU capabilities...');
 
-  // Check WebGPU API availability
-  if (typeof navigator === 'undefined' || !navigator.gpu) {
-    console.log('[ASCII-Gen] navigator.gpu not available.');
-    cachedReport = {
-      webgpu: false,
-      gpu: null,
-      gpuName: '',
-      reason: 'WebGPU is not available in this browser.',
-    };
-    return cachedReport;
-  }
-
+  // Guard against missing browser APIs
   try {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+      console.log('[ASCII-Gen] Not in a browser environment.');
+      cachedReport = {
+        webgpu: false,
+        gpu: null,
+        gpuName: '',
+        reason: 'Not in a browser environment.',
+      };
+      return cachedReport;
+    }
+
+    if (!navigator.gpu) {
+      console.log('[ASCII-Gen] navigator.gpu not available.');
+      cachedReport = {
+        webgpu: false,
+        gpu: null,
+        gpuName: '',
+        reason: 'WebGPU is not available in this browser.',
+      };
+      return cachedReport;
+    }
+
     const adapter = await withTimeout(
       navigator.gpu.requestAdapter(),
       3000,
@@ -54,8 +65,13 @@ export async function detectCapabilities(): Promise<CapabilityReport> {
       return cachedReport;
     }
 
-    const info = adapter.info;
-    const gpuName = info?.device || info?.description || 'Unknown GPU';
+    let gpuName = 'Unknown GPU';
+    try {
+      const info = adapter.info;
+      gpuName = info?.device || info?.description || 'Unknown GPU';
+    } catch {
+      // Some browsers may not support adapter.info
+    }
 
     console.log('[ASCII-Gen] WebGPU available:', gpuName);
     cachedReport = {

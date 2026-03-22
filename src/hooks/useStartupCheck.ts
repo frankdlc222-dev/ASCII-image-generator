@@ -14,6 +14,7 @@ const STARTUP_TIMEOUT_MS = 4000;
 /**
  * Background startup check — runs capability detection after mount
  * with a timeout so the UI is never blocked.
+ * All errors are caught internally — this hook will never throw.
  */
 export function useStartupCheck(): StartupState {
   const [state, setState] = useState<StartupState>({
@@ -29,7 +30,7 @@ export function useStartupCheck(): StartupState {
 
     const timeoutId = setTimeout(() => {
       if (cancelled) return;
-      console.warn('[ASCII-Gen] Capability check timed out after', STARTUP_TIMEOUT_MS, 'ms');
+      console.warn('[ASCII-Gen] Capability check timed out after', STARTUP_TIMEOUT_MS, 'ms — using fallback.');
       setState({
         status: 'fallback',
         message: 'Capability check timed out. Using procedural fallback.',
@@ -37,8 +38,10 @@ export function useStartupCheck(): StartupState {
       });
     }, STARTUP_TIMEOUT_MS);
 
-    detectCapabilities()
-      .then((report) => {
+    // Wrap entire detection in try/catch to guarantee no unhandled errors
+    const runCheck = async () => {
+      try {
+        const report = await detectCapabilities();
         if (cancelled) return;
         clearTimeout(timeoutId);
         console.log('[ASCII-Gen] Capability check complete:', report);
@@ -56,8 +59,7 @@ export function useStartupCheck(): StartupState {
             webgpuAvailable: false,
           });
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         if (cancelled) return;
         clearTimeout(timeoutId);
         console.error('[ASCII-Gen] Capability check failed:', err);
@@ -66,7 +68,10 @@ export function useStartupCheck(): StartupState {
           message: `Capability check failed: ${(err as Error).message}. Using procedural fallback.`,
           webgpuAvailable: false,
         });
-      });
+      }
+    };
+
+    runCheck();
 
     return () => {
       cancelled = true;

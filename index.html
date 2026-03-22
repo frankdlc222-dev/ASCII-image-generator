@@ -17,18 +17,18 @@
       </div>
     </div>
     <script>
-      // Safety timeout: if React hasn't mounted within 5 seconds, show an error
-      // and render a minimal fallback UI so the user is never stuck.
+      // Safety timeout: if the JS bundle hasn't loaded within 8 seconds,
+      // show an error. This only fires if the module script itself fails to
+      // load (network error, CORS, syntax error in bundle).
       window.__reactMounted = false;
       setTimeout(function() {
         if (window.__reactMounted) return;
-        console.error('[ASCII-Gen] React failed to mount within 5 seconds.');
+        console.error('[ASCII-Gen] JS bundle failed to load within 8 seconds.');
         var el = document.getElementById('loading-status');
         if (el) {
           el.style.color = '#f85149';
-          el.textContent = 'App failed to load. Check the browser console for errors.';
+          el.textContent = 'App failed to load. The JavaScript bundle may not have loaded. Check the browser console and network tab for errors.';
         }
-        // Append a reload button
         var fallback = document.getElementById('loading-fallback');
         if (fallback) {
           var btn = document.createElement('button');
@@ -37,7 +37,7 @@
           btn.onclick = function() { location.reload(); };
           fallback.appendChild(btn);
         }
-      }, 5000);
+      }, 8000);
     </script>
     <noscript>
       <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0d1117;color:#e6edf3;font-family:sans-serif;text-align:center;padding:2rem;">

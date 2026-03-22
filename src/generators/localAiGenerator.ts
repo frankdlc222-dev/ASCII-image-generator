@@ -1,6 +1,15 @@
 import type { Generator, GenerationMode, GenerationOptions, GenerationProgress } from '../types';
 import { detectCapabilities } from '../lib/capability';
 
+/** Race a promise against a timeout. */
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
+    ),
+  ]);
+}
 
 /**
  * Local AI Generator — WebGPU-based text-to-image generation in the browser.
@@ -31,29 +40,40 @@ export class LocalAiGenerator implements Generator {
   async isSupported(): Promise<boolean> {
     if (this.supported !== null) return this.supported;
 
+    console.log('[ASCII-Gen] Checking local AI support...');
+
     const cap = await detectCapabilities();
     if (!cap.webgpu) {
+      console.log('[ASCII-Gen] WebGPU not available, local AI not supported.');
       this.supported = false;
       return false;
     }
 
     // Check if we can actually get a device
     try {
-      const adapter = await navigator.gpu.requestAdapter();
+      const adapter = await withTimeout(
+        navigator.gpu.requestAdapter(),
+        3000,
+        'GPU adapter request'
+      );
       if (!adapter) {
         this.supported = false;
         return false;
       }
 
       // Check for minimum feature set
-      const device = await adapter.requestDevice();
+      const device = await withTimeout(
+        adapter.requestDevice(),
+        3000,
+        'GPU device request'
+      );
       device.destroy();
 
-      // Check if Transformers.js or ONNX Runtime is available
-      // We'll attempt dynamic import at initialization time
+      console.log('[ASCII-Gen] Local AI support confirmed.');
       this.supported = true;
       return true;
-    } catch {
+    } catch (e) {
+      console.warn('[ASCII-Gen] Local AI support check failed:', e);
       this.supported = false;
       return false;
     }
@@ -82,9 +102,14 @@ export class LocalAiGenerator implements Generator {
     try {
       // Attempt to load @huggingface/transformers for browser-based inference
       // This is dynamically imported so the app still works if the library isn't available
-      const transformers = await import(
-        /* @vite-ignore */
-        'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.4.1/dist/transformers.min.js'
+      console.log('[ASCII-Gen] Loading Transformers.js from CDN...');
+      const transformers = await withTimeout(
+        import(
+          /* @vite-ignore */
+          'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.4.1/dist/transformers.min.js'
+        ),
+        15000,
+        'Transformers.js CDN import'
       );
 
       onProgress?.({
